@@ -37,8 +37,7 @@
       <div id="player-chips" class="player-chips"></div>
       <div class="add-player">
         <input id="player-name" type="text" maxlength="12" placeholder="Skriv namn…" autocomplete="off">
-        <div id="avatar-grid" class="avatar-grid"></div>
-        <button id="btn-add-player" class="btn small">➕ Lägg till spelare</button>
+        <button id="btn-add-player" class="btn small">➕ Lägg till</button>
       </div>
     </div>
 
@@ -102,11 +101,8 @@
       <button id="btn-quit" class="btn small ghost">Avsluta</button>
     </div>
 
-    <!-- Scenen där avatarerna står, som i Wii -->
-    <div class="stage">
-      <div id="stage-avatars" class="stage-avatars"></div>
-      <div class="stage-floor"></div>
-    </div>
+    <!-- Turordningen, Hitster-stil: färgkort per spelare -->
+    <div id="turn-track" class="turn-track"></div>
   </section>
 
   <!-- ===== GAME OVER ===== -->
@@ -117,7 +113,6 @@
     </div>
     <h1 class="gameover-title" id="gameover-title">DU ÅKTE UT!</h1>
     <p class="gameover-sub" id="gameover-reason"></p>
-    <div id="podium" class="podium" hidden></div>
     <div class="result-card">
       <div id="scoreboard" class="scoreboard"></div>
       <div class="result-row"><span>Nivå</span><strong id="res-level">–</strong></div>
@@ -133,7 +128,6 @@
   <script src="audio.js"></script>
   <script src="pitch.js"></script>
   <script src="songs.js"></script>
-  <script src="avatars.js"></script>
   <script src="game.js"></script>
   <script>
     if ('serviceWorker' in navigator && location.protocol !== 'file:') {

@@ -31,6 +31,9 @@ const LEVELS = {
 const NOTE_NAMES = ['C', 'C♯', 'D', 'D♯', 'E', 'F', 'F♯', 'G', 'G♯', 'A', 'A♯', 'B'];
 const MAX_PLAYERS = 8;
 
+/* Spelarfärger i Hitster-stil – varje spelare får ett eget färgkort. */
+const PLAYER_COLORS = ['#ff3ec9', '#2ff3ff', '#ffd166', '#3ddc84', '#ff9f1c', '#b28dff', '#ff6b81', '#6bc5ff'];
+
 /* ---------- Speltillstånd ---------- */
 const game = {
   levelKey: null,
@@ -91,9 +94,8 @@ function showScreen(name) {
   }
 })();
 
-/* ---------- Spelare & avatarer (startskärmen) ---------- */
-let party = [];            // [{ name, avatarId }]
-let selectedAvatar = AVATARS[0].id;
+/* ---------- Spelare (startskärmen) ---------- */
+let party = [];            // [{ name }]
 
 function loadParty() {
   try {
@@ -105,21 +107,8 @@ function saveParty() {
   localStorage.setItem('singsong-party', JSON.stringify(party));
 }
 
-function renderAvatarGrid() {
-  const grid = $('avatar-grid');
-  grid.innerHTML = '';
-  AVATARS.forEach((a) => {
-    const btn = document.createElement('button');
-    btn.type = 'button';
-    btn.className = 'avatar-choice' + (a.id === selectedAvatar ? ' selected' : '');
-    btn.innerHTML = avatarSVG(a);
-    btn.title = 'Välj avatar';
-    btn.addEventListener('click', () => {
-      selectedAvatar = a.id;
-      renderAvatarGrid();
-    });
-    grid.appendChild(btn);
-  });
+function playerColor(i) {
+  return PLAYER_COLORS[i % PLAYER_COLORS.length];
 }
 
 function renderPlayerChips() {
@@ -128,7 +117,8 @@ function renderPlayerChips() {
   party.forEach((p, i) => {
     const chip = document.createElement('span');
     chip.className = 'player-chip';
-    chip.innerHTML = `${avatarSVG(avatarById(p.avatarId))}<span>${escapeHtml(p.name)}</span>`;
+    chip.style.background = playerColor(i);
+    chip.innerHTML = `<span>${escapeHtml(p.name)}</span>`;
     const rm = document.createElement('button');
     rm.type = 'button';
     rm.textContent = '✕';
@@ -151,49 +141,30 @@ function addPlayerFromForm() {
   if (party.length >= MAX_PLAYERS) return;
   const input = $('player-name');
   const name = input.value.trim() || `Spelare ${party.length + 1}`;
-  party.push({ name, avatarId: selectedAvatar });
+  party.push({ name });
   input.value = '';
-  // Föreslå en oanvänd avatar till nästa spelare
-  const used = new Set(party.map((p) => p.avatarId));
-  const free = AVATARS.find((a) => !used.has(a.id));
-  if (free) selectedAvatar = free.id;
   saveParty();
   renderPlayerChips();
-  renderAvatarGrid();
 }
 
-/* ---------- Scenen ---------- */
-function renderStage() {
-  const host = $('stage-avatars');
+/* ---------- Turordningen – färgkort i Hitster-stil ---------- */
+function renderTurnTrack() {
+  const host = $('turn-track');
   host.innerHTML = '';
+  if (game.players.length < 2) return; // spelar man själv behövs ingen turordning
   game.players.forEach((p, i) => {
     const el = document.createElement('div');
-    el.className = 'avatar';
-    el.dataset.index = i;
+    el.className = 'turn-card';
+    el.style.background = p.color;
     if (!p.alive) el.classList.add('out');
-    if (i === game.currentIdx && p.alive) el.classList.add('front');
-    el.innerHTML = avatarSVG(avatarById(p.avatarId), { withMic: i === game.currentIdx && p.alive })
-      + `<span class="avatar-name">${escapeHtml(p.name)}</span>`;
+    if (i === game.currentIdx && p.alive) {
+      el.classList.add('front');
+      el.innerHTML = `<span class="card-mic">🎤</span>${escapeHtml(p.name)}`;
+    } else {
+      el.textContent = p.name;
+    }
     host.appendChild(el);
   });
-}
-
-function stageAvatarEl(i) {
-  return document.querySelector(`.stage-avatars .avatar[data-index="${i}"]`);
-}
-
-/* Kör en kort animationsklass på en avatar. */
-function animateAvatar(i, cls, ms = 1000) {
-  const el = stageAvatarEl(i);
-  if (!el) return;
-  el.classList.remove(cls);
-  void el.offsetWidth; // starta om animationen
-  el.classList.add(cls);
-  setTimeout(() => el.classList.remove(cls), ms);
-}
-
-function cheerAll() {
-  game.players.forEach((p, i) => { if (p.alive) animateAvatar(i, 'hop', 1100); });
 }
 
 /* ---------- Notpapper (SVG) ---------- */
@@ -397,7 +368,7 @@ async function startGame(levelKey) {
   keepAwake();
 
   if (party.length === 0) {
-    party.push({ name: 'Spelare 1', avatarId: selectedAvatar });
+    party.push({ name: 'Spelare 1' });
     saveParty();
     renderPlayerChips();
   }
@@ -408,14 +379,14 @@ async function startGame(levelKey) {
   game.round = 1;
   game.streak = 0;
   game.lastSongId = null;
-  game.players = party.map((p) => ({
-    name: p.name, avatarId: p.avatarId,
+  game.players = party.map((p, i) => ({
+    name: p.name, color: playerColor(i),
     alive: true, score: 0, roundsCleared: 0,
   }));
   game.currentIdx = -1;
   game.turnQueue = [];
   showScreen('game');
-  renderStage();
+  renderTurnTrack();
   nextTurn();
 }
 
@@ -432,7 +403,7 @@ function nextTurn() {
 
   game.currentIdx = game.turnQueue.shift();
   game.phase = 'intro';
-  renderStage();
+  renderTurnTrack();
   updateHud();
 
   const p = currentPlayer();
@@ -490,7 +461,6 @@ function startSinging() {
   game.noteIndex = 0;
   updateHud();
   $('meter-wrap').classList.add('live');
-  stageAvatarEl(game.currentIdx)?.classList.add('sing');
   countdown(3, () => armNote());
 }
 
@@ -606,7 +576,6 @@ function evaluateNote(sungMidi, targetMidi) {
     game.results[game.noteIndex] = 'hit';
     setStatus(`✨ ${targetName}! +${points} poäng`);
     AudioEngine.playBlip(1320, 0.12, 0.2);
-    animateAvatar(game.currentIdx, 'hop', 950);
   } else {
     game.streak = 0;
     game.missesLeft--;
@@ -617,7 +586,6 @@ function evaluateNote(sungMidi, targetMidi) {
       : (cents > 0 ? `För högt! Det skulle vara ${targetName}` : `För lågt! Det skulle vara ${targetName}`);
     setStatus(`❌ ${why}`);
     AudioEngine.playBlip(180, 0.25, 0.3);
-    animateAvatar(game.currentIdx, 'wiggle', 500);
   }
   updateHud();
 
@@ -638,7 +606,6 @@ function evaluateNote(sungMidi, targetMidi) {
 function turnClear() {
   if (game.phase === 'over') return;
   game.phase = 'between';
-  stageAvatarEl(game.currentIdx)?.classList.remove('sing');
   updateHud();
   $('meter-wrap').classList.remove('live');
   const player = currentPlayer();
@@ -649,7 +616,6 @@ function turnClear() {
   setStatus(`🎉 WOOOW! Det var "${game.songTitle}"! +${bonus} bonus`);
   AudioEngine.playCheer();
   AudioEngine.playApplause(1.6);
-  cheerAll();
   spawnConfetti();
 
   // Uppspelning UTAN musik efter avklarad tur.
@@ -669,11 +635,10 @@ function playerOut() {
   if (game.phase === 'over') return;
   const player = currentPlayer();
   player.alive = false;
-  stageAvatarEl(game.currentIdx)?.classList.remove('sing');
   $('meter-wrap').classList.remove('live');
   AudioEngine.playAww();
   AudioEngine.playFailSound();
-  renderStage();
+  renderTurnTrack();
   setStatus(`💀 ${player.name} åkte ut! Det var "${game.songTitle}".`);
 
   const alive = alivePlayers();
@@ -705,8 +670,6 @@ function endGame({ aborted = false } = {}) {
   if (winner) {
     $('gameover-title').textContent = `${winner.name} VANN! 🏆`;
     $('gameover-reason').textContent = 'Sista sångfågeln kvar på scenen!';
-    $('podium').hidden = false;
-    $('podium').innerHTML = `<div class="avatar hop">${avatarSVG(avatarById(winner.avatarId), { withMic: true })}</div>`;
     AudioEngine.playCheer();
     AudioEngine.playApplause(2.2);
     spawnConfetti();
@@ -714,13 +677,11 @@ function endGame({ aborted = false } = {}) {
   } else if (aborted) {
     $('gameover-title').textContent = 'AVSLUTAT';
     $('gameover-reason').textContent = 'Ni hoppade av – discot väntar på revansch!';
-    $('podium').hidden = true;
   } else {
     $('gameover-title').textContent = 'DU ÅKTE UT!';
     $('gameover-reason').textContent = multi
       ? 'Alla åkte ut – discot vann den här gången!'
       : `Tonerna satt inte – det var "${game.songTitle}".`;
-    $('podium').hidden = true;
   }
 
   const board = $('scoreboard');
@@ -730,7 +691,7 @@ function endGame({ aborted = false } = {}) {
     .forEach((p) => {
       const row = document.createElement('div');
       row.className = 'score-row' + (winner && p === winner ? ' winner' : '');
-      row.innerHTML = `${avatarSVG(avatarById(p.avatarId))}
+      row.innerHTML = `<span class="score-dot" style="background:${p.color}"></span>
         <span class="score-name">${escapeHtml(p.name)}</span>
         ${p.alive ? '' : '<span class="score-out">💀 utslagen</span>'}
         <span class="score-points">${p.score} p</span>`;
@@ -805,11 +766,9 @@ $('btn-retry').addEventListener('click', () => { showHighscores(); startGame(gam
 $('btn-menu').addEventListener('click', () => {
   showHighscores();
   renderPlayerChips();
-  renderAvatarGrid();
   showScreen('start');
 });
 
 loadParty();
-renderAvatarGrid();
 renderPlayerChips();
 showHighscores();

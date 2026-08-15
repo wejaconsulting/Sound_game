@@ -6,16 +6,14 @@ och snabbare – missar du för många toner åker du ut!
 
 **🕹️ Spela live:** https://wejaconsulting.github.io/Sound_game/
 
-## Partyläge med avatarer 🧑‍🎤
+## Partyläge i Hitster-stil 🎉
 
-- Varje person väljer **sin egen avatar** (Mii-liknande figurer i tolv varianter)
-  och skriver sitt namn innan spelet startar. Sällskapet sparas till nästa gång.
-- Avatarerna **står på en scen som i Wii** – den som sjunger kliver fram i
-  spotlighten med mikrofon i handen, de andra väntar bakom.
-- Spelarna sjunger **en i taget, en och en**. Missar du för många toner åker din
-  avatar ut och blir liggande på scenen. 💀
-- Sista sångfågeln kvar vinner – vinnaren hoppar på podiet med konfettiregn och
-  hela poängtavlan visas.
+- Skriv in namnen på alla som ska sjunga – varje spelare får ett **eget färgkort**,
+  precis som i Hitster. Sällskapet sparas till nästa gång.
+- Spelarna sjunger **en i taget, en och en**. Färgkorten visar turordningen –
+  kortet för den som sjunger pulserar med en mikrofon 🎤, utslagna kort gråas ut.
+- Missar du för många toner åker du ut. 💀 Sista sångfågeln kvar vinner, med
+  konfettiregn och hela poängtavlan i spelarfärger.
 - Spelar man själv gäller klassisk överlevnad: hur många rundor klarar du?
 
 ## Ljudeffekter 🔊

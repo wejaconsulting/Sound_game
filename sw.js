@@ -1,5 +1,5 @@
 /* ===== Sing Song – service worker: gör appen installerbar och offline-klar ===== */
-const CACHE = 'singsong-v4';
+const CACHE = 'singsong-v5';
 const ASSETS = [
   './',
   './index.html',
@@ -7,7 +7,6 @@ const ASSETS = [
   './audio.js',
   './pitch.js',
   './songs.js',
-  './avatars.js',
   './game.js',
   './manifest.json',
   './icon-192.png',
