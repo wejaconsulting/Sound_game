@@ -143,6 +143,126 @@ button {
 .lvl-name { font-size: 1.35rem; letter-spacing: .04em; }
 .lvl-desc { font-size: .8rem; opacity: .75; line-height: 1.35; }
 
+/* ===== Spelarval ===== */
+.party-box {
+  width: min(640px, 94vw);
+  border-radius: 20px;
+  padding: 1rem 1.1rem 1.2rem;
+  background: rgba(255,255,255,.07);
+  border: 2px solid rgba(255,255,255,.16);
+  display: flex; flex-direction: column; gap: .8rem;
+}
+.party-title { font-size: 1.2rem; letter-spacing: .04em; }
+.player-chips { display: flex; flex-wrap: wrap; gap: .5rem; justify-content: center; min-height: 2.6rem; }
+.player-chips:empty::after {
+  content: "Inga spelare ännu – lägg till minst en! 👇";
+  opacity: .55; font-size: .85rem; align-self: center;
+}
+.player-chip {
+  display: flex; align-items: center; gap: .45rem;
+  padding: .3rem .6rem .3rem .35rem;
+  border-radius: 999px;
+  background: rgba(255,255,255,.1);
+  border: 1px solid rgba(255,255,255,.25);
+  font-size: .95rem;
+}
+.player-chip .mii-svg { width: 26px; height: 39px; }
+.player-chip button {
+  background: none; border: none; color: #fff; opacity: .6;
+  font-size: 1rem; cursor: pointer; padding: 0 .15rem;
+}
+.player-chip button:hover { opacity: 1; color: var(--red); }
+.add-player { display: flex; flex-direction: column; gap: .7rem; align-items: center; }
+.add-player input {
+  font-family: inherit; font-size: 1rem; color: #fff; text-align: center;
+  width: min(280px, 80vw);
+  padding: .55rem .9rem; border-radius: 999px;
+  border: 2px solid rgba(255,255,255,.25);
+  background: rgba(0,0,0,.25);
+  outline: none;
+}
+.add-player input:focus { border-color: var(--cyan); box-shadow: 0 0 12px rgba(47,243,255,.4); }
+.avatar-grid {
+  display: grid; grid-template-columns: repeat(6, 1fr); gap: .4rem;
+  width: min(420px, 88vw);
+}
+.avatar-choice {
+  background: rgba(255,255,255,.06); border: 2px solid transparent;
+  border-radius: 12px; cursor: pointer; padding: .25rem;
+  transition: transform .12s, border-color .12s;
+}
+.avatar-choice .mii-svg { width: 100%; height: auto; }
+.avatar-choice:hover { transform: scale(1.08); }
+.avatar-choice.selected { border-color: var(--pink); box-shadow: 0 0 12px rgba(255,62,201,.55); }
+.pick-level-hint { opacity: .7; font-size: .95rem; margin-top: .2rem; }
+
+/* ===== Scenen (som i Wii) ===== */
+.stage {
+  position: relative;
+  width: min(820px, 96vw);
+  height: 150px;
+  margin-top: .2rem;
+}
+.stage-floor {
+  position: absolute; left: 0; right: 0; bottom: 0; height: 46px;
+  border-radius: 50% / 100% 100% 0 0;
+  background:
+    repeating-conic-gradient(from 0deg at 50% -40%, rgba(255,255,255,.08) 0deg 12deg, transparent 12deg 24deg),
+    linear-gradient(180deg, #3d1d6e, #1c0a3a);
+  border-top: 2px solid rgba(255,255,255,.25);
+  box-shadow: 0 -8px 40px rgba(123,47,247,.5);
+}
+.stage-avatars {
+  position: absolute; inset: 0 0 18px 0;
+  display: flex; align-items: flex-end; justify-content: center; gap: .6rem;
+  z-index: 1;
+}
+.avatar { position: relative; width: 62px; transition: transform .35s ease, filter .35s ease, opacity .35s; }
+.avatar .mii-svg { width: 100%; height: auto; display: block; }
+.avatar .avatar-name {
+  position: absolute; left: 50%; transform: translateX(-50%);
+  bottom: -16px; white-space: nowrap;
+  font-size: .68rem; opacity: .8; text-shadow: 0 1px 3px #000;
+}
+.avatar.front { width: 86px; transform: translateY(4px); z-index: 2; }
+.avatar.front::before {
+  content: ""; position: absolute; left: 50%; bottom: -6px; z-index: -1;
+  width: 150px; height: 190px; transform: translateX(-50%);
+  background: linear-gradient(180deg, rgba(255,241,168,0) 0%, rgba(255,241,168,.16) 35%, rgba(255,241,168,.34) 100%);
+  clip-path: polygon(38% 0, 62% 0, 100% 100%, 0 100%);
+  pointer-events: none;
+}
+.avatar.front .avatar-name { font-size: .8rem; color: var(--gold); opacity: 1; }
+.avatar.out { filter: grayscale(1) brightness(.55); opacity: .45; transform: rotate(74deg) translate(6px, 14px); }
+.avatar.out .avatar-name { display: none; }
+.avatar.hop { animation: avatar-hop .45s ease 2; }
+@keyframes avatar-hop { 50% { transform: translateY(-20px); } }
+.avatar.front.hop { animation: avatar-hop-front .45s ease 2; }
+@keyframes avatar-hop-front { 50% { transform: translateY(-18px); } }
+.avatar.wiggle { animation: avatar-wiggle .4s ease; }
+@keyframes avatar-wiggle {
+  25% { transform: translateX(-6px) rotate(-4deg); }
+  75% { transform: translateX(6px) rotate(4deg); }
+}
+.avatar.front.sing { animation: avatar-sway 1.1s ease-in-out infinite; }
+@keyframes avatar-sway { 50% { transform: translateY(4px) rotate(2.5deg); } }
+
+/* ===== Podium & poängtavla ===== */
+.podium { display: flex; flex-direction: column; align-items: center; gap: .2rem; }
+.podium .avatar { width: 110px; }
+.podium .avatar.hop { animation: avatar-hop .5s ease infinite; }
+.scoreboard { display: flex; flex-direction: column; gap: .4rem; margin-bottom: .4rem; }
+.scoreboard .score-row {
+  display: flex; align-items: center; gap: .6rem;
+  padding: .25rem .4rem; border-radius: 10px;
+  background: rgba(255,255,255,.05);
+}
+.scoreboard .score-row.winner { background: rgba(255,209,102,.14); border: 1px solid rgba(255,209,102,.4); }
+.scoreboard .mii-svg { width: 24px; height: 36px; }
+.scoreboard .score-name { flex: 1; text-align: left; }
+.scoreboard .score-points { color: var(--gold); }
+.scoreboard .score-out { opacity: .55; font-size: .8rem; }
+
 .highscore { color: var(--gold); text-shadow: 0 0 12px rgba(255, 209, 102, .6); min-height: 1.2em; }
 .mic-note { font-size: .85rem; opacity: .6; }
 .mic-error { color: var(--red); font-size: .95rem; max-width: 32rem; }

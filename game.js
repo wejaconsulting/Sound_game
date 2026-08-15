@@ -4,7 +4,7 @@
 /* Melodierna hämtas ur songboken (songs.js) per nivå.
    startNotes = så många toner av låten runda 1 börjar med.
    toleranceCents = hur nära man måste sjunga (oktav-oberoende).
-   misses = tillåtna missar per runda. replays = "hör igen" per runda. */
+   misses = tillåtna missar per tur. replays = "hör igen" per tur. */
 const LEVELS = {
   latt: {
     label: 'Lätt',
@@ -29,13 +29,16 @@ const LEVELS = {
 };
 
 const NOTE_NAMES = ['C', 'C♯', 'D', 'D♯', 'E', 'F', 'F♯', 'G', 'G♯', 'A', 'A♯', 'B'];
+const MAX_PLAYERS = 8;
 
 /* ---------- Speltillstånd ---------- */
 const game = {
   levelKey: null,
   level: null,
   round: 1,
-  score: 0,
+  players: [],       // [{ name, avatarId, alive, score, roundsCleared }]
+  currentIdx: -1,    // index i players på den som sjunger
+  turnQueue: [],     // spelarindex kvar i nuvarande runda
   streak: 0,
   melody: [],        // [{ midi, beats }]
   songTitle: '',
@@ -44,12 +47,19 @@ const game = {
   noteIndex: 0,
   missesLeft: 0,
   replaysLeft: 0,
-  phase: 'idle', // idle | listen | sing | between | over
+  phase: 'idle', // idle | intro | listen | sing | between | over
   cancelPlayback: null,
   pitchLoop: null,
   frames: [],
   noteStartedAt: 0,
 };
+
+function currentPlayer() {
+  return game.players[game.currentIdx];
+}
+function alivePlayers() {
+  return game.players.filter((p) => p.alive);
+}
 
 /* ---------- DOM ---------- */
 const $ = (id) => document.getElementById(id);
@@ -80,6 +90,111 @@ function showScreen(name) {
     host.appendChild(s);
   }
 })();
+
+/* ---------- Spelare & avatarer (startskärmen) ---------- */
+let party = [];            // [{ name, avatarId }]
+let selectedAvatar = AVATARS[0].id;
+
+function loadParty() {
+  try {
+    const saved = JSON.parse(localStorage.getItem('singsong-party') || '[]');
+    if (Array.isArray(saved)) party = saved.filter((p) => p && p.name).slice(0, MAX_PLAYERS);
+  } catch { party = []; }
+}
+function saveParty() {
+  localStorage.setItem('singsong-party', JSON.stringify(party));
+}
+
+function renderAvatarGrid() {
+  const grid = $('avatar-grid');
+  grid.innerHTML = '';
+  AVATARS.forEach((a) => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'avatar-choice' + (a.id === selectedAvatar ? ' selected' : '');
+    btn.innerHTML = avatarSVG(a);
+    btn.title = 'Välj avatar';
+    btn.addEventListener('click', () => {
+      selectedAvatar = a.id;
+      renderAvatarGrid();
+    });
+    grid.appendChild(btn);
+  });
+}
+
+function renderPlayerChips() {
+  const host = $('player-chips');
+  host.innerHTML = '';
+  party.forEach((p, i) => {
+    const chip = document.createElement('span');
+    chip.className = 'player-chip';
+    chip.innerHTML = `${avatarSVG(avatarById(p.avatarId))}<span>${escapeHtml(p.name)}</span>`;
+    const rm = document.createElement('button');
+    rm.type = 'button';
+    rm.textContent = '✕';
+    rm.setAttribute('aria-label', `Ta bort ${p.name}`);
+    rm.addEventListener('click', () => {
+      party.splice(i, 1);
+      saveParty();
+      renderPlayerChips();
+    });
+    chip.appendChild(rm);
+    host.appendChild(chip);
+  });
+}
+
+function escapeHtml(s) {
+  return s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
+function addPlayerFromForm() {
+  if (party.length >= MAX_PLAYERS) return;
+  const input = $('player-name');
+  const name = input.value.trim() || `Spelare ${party.length + 1}`;
+  party.push({ name, avatarId: selectedAvatar });
+  input.value = '';
+  // Föreslå en oanvänd avatar till nästa spelare
+  const used = new Set(party.map((p) => p.avatarId));
+  const free = AVATARS.find((a) => !used.has(a.id));
+  if (free) selectedAvatar = free.id;
+  saveParty();
+  renderPlayerChips();
+  renderAvatarGrid();
+}
+
+/* ---------- Scenen ---------- */
+function renderStage() {
+  const host = $('stage-avatars');
+  host.innerHTML = '';
+  game.players.forEach((p, i) => {
+    const el = document.createElement('div');
+    el.className = 'avatar';
+    el.dataset.index = i;
+    if (!p.alive) el.classList.add('out');
+    if (i === game.currentIdx && p.alive) el.classList.add('front');
+    el.innerHTML = avatarSVG(avatarById(p.avatarId), { withMic: i === game.currentIdx && p.alive })
+      + `<span class="avatar-name">${escapeHtml(p.name)}</span>`;
+    host.appendChild(el);
+  });
+}
+
+function stageAvatarEl(i) {
+  return document.querySelector(`.stage-avatars .avatar[data-index="${i}"]`);
+}
+
+/* Kör en kort animationsklass på en avatar. */
+function animateAvatar(i, cls, ms = 1000) {
+  const el = stageAvatarEl(i);
+  if (!el) return;
+  el.classList.remove(cls);
+  void el.offsetWidth; // starta om animationen
+  el.classList.add(cls);
+  setTimeout(() => el.classList.remove(cls), ms);
+}
+
+function cheerAll() {
+  game.players.forEach((p, i) => { if (p.alive) animateAvatar(i, 'hop', 1100); });
+}
 
 /* ---------- Notpapper (SVG) ---------- */
 const STAFF = { top: 60, gap: 18, left: 90, right: 770 };
@@ -211,9 +326,10 @@ function roundTempo(level, round) {
 
 /* ---------- HUD ---------- */
 function updateHud() {
-  $('hud-level').textContent = game.level.label;
+  const p = currentPlayer();
+  $('hud-player').textContent = p ? p.name : '–';
   $('hud-round').textContent = game.round;
-  $('hud-score').textContent = game.score;
+  $('hud-score').textContent = p ? p.score : 0;
   $('hud-lives').textContent = game.missesLeft > 0 ? '❤️'.repeat(game.missesLeft) : '💀';
   $('replay-count').textContent = game.replaysLeft;
   $('btn-replay').disabled = game.replaysLeft <= 0 || game.phase !== 'sing';
@@ -247,7 +363,7 @@ function releaseWake() {
   wakeLock = null;
 }
 document.addEventListener('visibilitychange', () => {
-  if (document.visibilityState === 'visible' && ['listen', 'sing', 'between'].includes(game.phase)) {
+  if (document.visibilityState === 'visible' && ['intro', 'listen', 'sing', 'between'].includes(game.phase)) {
     keepAwake();
     AudioEngine.getCtx(); // väck AudioContext igen om mobilen pausade den
   }
@@ -280,14 +396,50 @@ async function startGame(levelKey) {
   $('mic-error').hidden = true;
   keepAwake();
 
+  if (party.length === 0) {
+    party.push({ name: 'Spelare 1', avatarId: selectedAvatar });
+    saveParty();
+    renderPlayerChips();
+  }
+
   game.levelKey = levelKey;
   game.level = LEVELS[levelKey];
   game.phase = 'idle';
   game.round = 1;
-  game.score = 0;
   game.streak = 0;
+  game.lastSongId = null;
+  game.players = party.map((p) => ({
+    name: p.name, avatarId: p.avatarId,
+    alive: true, score: 0, roundsCleared: 0,
+  }));
+  game.currentIdx = -1;
+  game.turnQueue = [];
   showScreen('game');
-  startRound();
+  renderStage();
+  nextTurn();
+}
+
+/* Nästa spelare i tur – fyller på kön och höjer rundan när alla sjungit. */
+function nextTurn() {
+  if (game.phase === 'over') return;
+
+  if (game.turnQueue.length === 0) {
+    const alive = game.players.map((p, i) => (p.alive ? i : -1)).filter((i) => i >= 0);
+    if (alive.length === 0) return; // hanteras av playerOut
+    if (game.currentIdx >= 0) game.round++; // ny runda när kön fyllts på igen (ej första)
+    game.turnQueue = alive;
+  }
+
+  game.currentIdx = game.turnQueue.shift();
+  game.phase = 'intro';
+  renderStage();
+  updateHud();
+
+  const p = currentPlayer();
+  const solo = game.players.length === 1;
+  setStatus(solo ? `Runda ${game.round} – gör dig redo! 🎤` : `🎤 Nu sjunger ${p.name}!`, true);
+  AudioEngine.playBlip(880, 0.12, 0.2);
+  setTimeout(startRound, solo ? 900 : 1600);
 }
 
 function startRound() {
@@ -298,6 +450,7 @@ function startRound() {
   game.noteIndex = 0;
   game.missesLeft = lvl.misses;
   game.replaysLeft = lvl.replays;
+  game.streak = 0;
   game.phase = 'listen';
   updateHud();
 
@@ -337,6 +490,7 @@ function startSinging() {
   game.noteIndex = 0;
   updateHud();
   $('meter-wrap').classList.add('live');
+  stageAvatarEl(game.currentIdx)?.classList.add('sing');
   countdown(3, () => armNote());
 }
 
@@ -434,6 +588,7 @@ function evaluateNote(sungMidi, targetMidi) {
   cancelAnimationFrame(game.pitchLoop);
   const tol = game.level.toleranceCents;
   const targetName = midiToName(targetMidi);
+  const player = currentPlayer();
 
   let hit = false;
   let cents = null;
@@ -446,11 +601,12 @@ function evaluateNote(sungMidi, targetMidi) {
     game.streak++;
     const accuracy = 1 - Math.abs(cents) / tol;
     const points = Math.round(60 + 60 * accuracy) + game.streak * 5;
-    game.score += points;
+    player.score += points;
     setNoteState(game.noteIndex, 'hit');
     game.results[game.noteIndex] = 'hit';
     setStatus(`✨ ${targetName}! +${points} poäng`);
     AudioEngine.playBlip(1320, 0.12, 0.2);
+    animateAvatar(game.currentIdx, 'hop', 950);
   } else {
     game.streak = 0;
     game.missesLeft--;
@@ -461,64 +617,128 @@ function evaluateNote(sungMidi, targetMidi) {
       : (cents > 0 ? `För högt! Det skulle vara ${targetName}` : `För lågt! Det skulle vara ${targetName}`);
     setStatus(`❌ ${why}`);
     AudioEngine.playBlip(180, 0.25, 0.3);
+    animateAvatar(game.currentIdx, 'wiggle', 500);
   }
   updateHud();
 
   if (!hit && game.missesLeft < 0) {
-    setTimeout(() => gameOver(`Tonerna satt inte – det var "${game.songTitle}".`), 900);
+    setTimeout(playerOut, 900);
     return;
   }
 
   game.noteIndex++;
   if (game.noteIndex >= game.melody.length) {
-    setTimeout(roundClear, 900);
+    setTimeout(turnClear, 900);
   } else {
     setTimeout(() => armNote(), 1000);
   }
 }
 
-function roundClear() {
+/* Spelarens tur klarad – publiken jublar: WOOOW! */
+function turnClear() {
   if (game.phase === 'over') return;
   game.phase = 'between';
+  stageAvatarEl(game.currentIdx)?.classList.remove('sing');
   updateHud();
   $('meter-wrap').classList.remove('live');
+  const player = currentPlayer();
   const bonus = 100 * game.round;
-  game.score += bonus;
+  player.score += bonus;
+  player.roundsCleared = game.round;
   updateHud();
-  setStatus(`🎉 Det var "${game.songTitle}"! +${bonus} bonus – hör den igen, helt ren:`);
-  AudioEngine.playSuccessJingle();
+  setStatus(`🎉 WOOOW! Det var "${game.songTitle}"! +${bonus} bonus`);
+  AudioEngine.playCheer();
+  AudioEngine.playApplause(1.6);
+  cheerAll();
   spawnConfetti();
 
-  // Uppspelning UTAN musik efter avklarad runda.
+  // Uppspelning UTAN musik efter avklarad tur.
   setTimeout(() => {
     if (game.phase === 'over') return;
+    setStatus(`Så här lät "${game.songTitle}", helt rent:`);
     game.melody.forEach((_, i) => setNoteState(i, null));
     playMelodyWithUI({
       withBeat: false,
-      then: () => {
-        game.round++;
-        setTimeout(startRound, 1200);
-      },
+      then: () => setTimeout(nextTurn, 1000),
     });
-  }, 1600);
+  }, 2000);
 }
 
-function gameOver(reason) {
+/* Spelaren missade för mycket och åker ut. */
+function playerOut() {
+  if (game.phase === 'over') return;
+  const player = currentPlayer();
+  player.alive = false;
+  stageAvatarEl(game.currentIdx)?.classList.remove('sing');
+  $('meter-wrap').classList.remove('live');
+  AudioEngine.playAww();
+  AudioEngine.playFailSound();
+  renderStage();
+  setStatus(`💀 ${player.name} åkte ut! Det var "${game.songTitle}".`);
+
+  const alive = alivePlayers();
+  const multi = game.players.length > 1;
+  if ((multi && alive.length <= 1) || (!multi && alive.length === 0)) {
+    setTimeout(endGame, 2000);
+  } else {
+    setTimeout(nextTurn, 2200);
+  }
+}
+
+/* Spelet slut – visa vinnare/poängtavla. */
+function endGame({ aborted = false } = {}) {
   if (game.phase === 'over') return;
   game.phase = 'over';
   if (game.cancelPlayback) { game.cancelPlayback(); game.cancelPlayback = null; }
   cancelAnimationFrame(game.pitchLoop);
   releaseWake();
-  AudioEngine.playFailSound();
 
+  const multi = game.players.length > 1;
+  const winner = !aborted && multi ? alivePlayers()[0] || null : null;
+
+  // Rekord: bästa poängen i sällskapet
   const key = `singsong-best-${game.levelKey}`;
-  const best = Math.max(game.score, Number(localStorage.getItem(key) || 0));
+  const topScore = Math.max(...game.players.map((p) => p.score));
+  const best = Math.max(topScore, Number(localStorage.getItem(key) || 0));
   localStorage.setItem(key, String(best));
 
-  $('gameover-reason').textContent = reason;
+  if (winner) {
+    $('gameover-title').textContent = `${winner.name} VANN! 🏆`;
+    $('gameover-reason').textContent = 'Sista sångfågeln kvar på scenen!';
+    $('podium').hidden = false;
+    $('podium').innerHTML = `<div class="avatar hop">${avatarSVG(avatarById(winner.avatarId), { withMic: true })}</div>`;
+    AudioEngine.playCheer();
+    AudioEngine.playApplause(2.2);
+    spawnConfetti();
+    setTimeout(spawnConfetti, 900);
+  } else if (aborted) {
+    $('gameover-title').textContent = 'AVSLUTAT';
+    $('gameover-reason').textContent = 'Ni hoppade av – discot väntar på revansch!';
+    $('podium').hidden = true;
+  } else {
+    $('gameover-title').textContent = 'DU ÅKTE UT!';
+    $('gameover-reason').textContent = multi
+      ? 'Alla åkte ut – discot vann den här gången!'
+      : `Tonerna satt inte – det var "${game.songTitle}".`;
+    $('podium').hidden = true;
+  }
+
+  const board = $('scoreboard');
+  board.innerHTML = '';
+  [...game.players]
+    .sort((a, b) => b.score - a.score)
+    .forEach((p) => {
+      const row = document.createElement('div');
+      row.className = 'score-row' + (winner && p === winner ? ' winner' : '');
+      row.innerHTML = `${avatarSVG(avatarById(p.avatarId))}
+        <span class="score-name">${escapeHtml(p.name)}</span>
+        ${p.alive ? '' : '<span class="score-out">💀 utslagen</span>'}
+        <span class="score-points">${p.score} p</span>`;
+      board.appendChild(row);
+    });
+
   $('res-level').textContent = game.level.label;
-  $('res-rounds').textContent = game.round - 1;
-  $('res-score').textContent = game.score;
+  $('res-rounds').textContent = Math.max(...game.players.map((p) => p.roundsCleared));
   $('res-best').textContent = best;
   showScreen('over');
 }
@@ -554,6 +774,11 @@ document.querySelectorAll('.level-card').forEach((btn) => {
   btn.addEventListener('click', () => startGame(btn.dataset.level));
 });
 
+$('btn-add-player').addEventListener('click', addPlayerFromForm);
+$('player-name').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') addPlayerFromForm();
+});
+
 $('btn-replay').addEventListener('click', () => {
   if (game.phase !== 'sing' || game.replaysLeft <= 0) return;
   game.replaysLeft--;
@@ -575,8 +800,16 @@ $('btn-replay').addEventListener('click', () => {
   });
 });
 
-$('btn-quit').addEventListener('click', () => gameOver('Du hoppade av – discot väntar på revansch!'));
+$('btn-quit').addEventListener('click', () => endGame({ aborted: true }));
 $('btn-retry').addEventListener('click', () => { showHighscores(); startGame(game.levelKey); });
-$('btn-menu').addEventListener('click', () => { showHighscores(); showScreen('start'); });
+$('btn-menu').addEventListener('click', () => {
+  showHighscores();
+  renderPlayerChips();
+  renderAvatarGrid();
+  showScreen('start');
+});
 
+loadParty();
+renderAvatarGrid();
+renderPlayerChips();
 showHighscores();

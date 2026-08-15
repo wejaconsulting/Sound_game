@@ -1,8 +1,31 @@
 # Sing Song 🎤✨
 
-Ett sång- och lekspel med disco-vibe: du får en melodi uppspelad på keyboard och ska
+Ett sång- och partyspel med disco-vibe: du får en melodi uppspelad på keyboard och ska
 sedan sjunga tillbaka exakt samma toner. Klarar du rundan blir nästa melodi längre
 och snabbare – missar du för många toner åker du ut!
+
+**🕹️ Spela live:** https://wejaconsulting.github.io/Sound_game/
+
+## Partyläge med avatarer 🧑‍🎤
+
+- Varje person väljer **sin egen avatar** (Mii-liknande figurer i tolv varianter)
+  och skriver sitt namn innan spelet startar. Sällskapet sparas till nästa gång.
+- Avatarerna **står på en scen som i Wii** – den som sjunger kliver fram i
+  spotlighten med mikrofon i handen, de andra väntar bakom.
+- Spelarna sjunger **en i taget, en och en**. Missar du för många toner åker din
+  avatar ut och blir liggande på scenen. 💀
+- Sista sångfågeln kvar vinner – vinnaren hoppar på podiet med konfettiregn och
+  hela poängtavlan visas.
+- Spelar man själv gäller klassisk överlevnad: hur många rundor klarar du?
+
+## Ljudeffekter 🔊
+
+Publiken lever med – helt syntetiserat med Web Audio, inga samplingar:
+
+- **"WOOOW!"** – körade jubelröster med formantsvep när en tur klaras
+- **Applåder** – tätt klappregn av filtrerade bruspuffar
+- **"Aaaw…"** – besviket publiksuck när någon åker ut
+- Plus jingel vid klarad runda, blipp-nedräkning och miss-ljud
 
 ## Så spelar du
 

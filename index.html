@@ -32,6 +32,17 @@
     <h1 class="logo">Sing<span>Song</span></h1>
     <p class="tagline">Lyssna på melodin. Sjung tonerna. Överlev rundan. 🎤</p>
 
+    <div class="party-box">
+      <h2 class="party-title">Vilka ska sjunga?</h2>
+      <div id="player-chips" class="player-chips"></div>
+      <div class="add-player">
+        <input id="player-name" type="text" maxlength="12" placeholder="Skriv namn…" autocomplete="off">
+        <div id="avatar-grid" class="avatar-grid"></div>
+        <button id="btn-add-player" class="btn small">➕ Lägg till spelare</button>
+      </div>
+    </div>
+
+    <p class="pick-level-hint">…och välj nivå för att starta:</p>
     <div class="level-grid">
       <button class="level-card" data-level="latt">
         <span class="lvl-emoji">🟢</span>
@@ -63,7 +74,7 @@
   <!-- ===== SPELSKÄRM ===== -->
   <section id="screen-game" class="screen">
     <header class="hud">
-      <div class="hud-item"><span class="hud-label">Nivå</span><span id="hud-level">–</span></div>
+      <div class="hud-item"><span class="hud-label">Sjunger</span><span id="hud-player">–</span></div>
       <div class="hud-item"><span class="hud-label">Runda</span><span id="hud-round">1</span></div>
       <div class="hud-item"><span class="hud-label">Poäng</span><span id="hud-score">0</span></div>
       <div class="hud-item"><span class="hud-label">Missar kvar</span><span id="hud-lives">❤️❤️</span></div>
@@ -90,6 +101,12 @@
       <button id="btn-replay" class="btn small">🔁 Hör igen (<span id="replay-count">0</span>)</button>
       <button id="btn-quit" class="btn small ghost">Avsluta</button>
     </div>
+
+    <!-- Scenen där avatarerna står, som i Wii -->
+    <div class="stage">
+      <div id="stage-avatars" class="stage-avatars"></div>
+      <div class="stage-floor"></div>
+    </div>
   </section>
 
   <!-- ===== GAME OVER ===== -->
@@ -98,12 +115,13 @@
       <div class="ball"></div>
       <div class="string"></div>
     </div>
-    <h1 class="gameover-title">DU ÅKTE UT!</h1>
+    <h1 class="gameover-title" id="gameover-title">DU ÅKTE UT!</h1>
     <p class="gameover-sub" id="gameover-reason"></p>
+    <div id="podium" class="podium" hidden></div>
     <div class="result-card">
+      <div id="scoreboard" class="scoreboard"></div>
       <div class="result-row"><span>Nivå</span><strong id="res-level">–</strong></div>
       <div class="result-row"><span>Rundor klarade</span><strong id="res-rounds">0</strong></div>
-      <div class="result-row"><span>Poäng</span><strong id="res-score">0</strong></div>
       <div class="result-row"><span>Rekord</span><strong id="res-best">0</strong></div>
     </div>
     <div class="game-buttons">
@@ -115,6 +133,7 @@
   <script src="audio.js"></script>
   <script src="pitch.js"></script>
   <script src="songs.js"></script>
+  <script src="avatars.js"></script>
   <script src="game.js"></script>
   <script>
     if ('serviceWorker' in navigator && location.protocol !== 'file:') {

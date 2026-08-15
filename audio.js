@@ -107,6 +107,106 @@ const AudioEngine = (() => {
     [50, 44].forEach((m, i) => playNote(m, t + i * 0.28, 0.45, 0.4));
   }
 
+  function noiseBuffer(seconds) {
+    const ac = getCtx();
+    const len = Math.max(1, Math.floor(ac.sampleRate * seconds));
+    const buf = ac.createBuffer(1, len, ac.sampleRate);
+    const data = buf.getChannelData(0);
+    for (let i = 0; i < len; i++) data[i] = Math.random() * 2 - 1;
+    return buf;
+  }
+
+  /* Publikens "WOOOW!" – körade sågtandsröster med formantsvep + jubelbrus. */
+  function playCheer() {
+    const ac = getCtx();
+    const t = ac.currentTime;
+
+    for (let v = 0; v < 5; v++) {
+      const base = 130 + v * 35 + Math.random() * 12;
+      const o = ac.createOscillator();
+      o.type = 'sawtooth';
+      o.frequency.setValueAtTime(base * 0.8, t);
+      o.frequency.exponentialRampToValueAtTime(base * 1.7, t + 0.35);
+      o.frequency.exponentialRampToValueAtTime(base * 0.85, t + 1.0);
+
+      const formant = ac.createBiquadFilter();
+      formant.type = 'bandpass';
+      formant.Q.value = 2.2;
+      formant.frequency.setValueAtTime(380, t);            // "w–oo"
+      formant.frequency.exponentialRampToValueAtTime(950, t + 0.4); // "–ooo"
+      formant.frequency.exponentialRampToValueAtTime(480, t + 1.0); // "–ow"
+
+      const g = ac.createGain();
+      g.gain.setValueAtTime(0, t);
+      g.gain.linearRampToValueAtTime(0.09, t + 0.08 + v * 0.02);
+      g.gain.setValueAtTime(0.09, t + 0.7);
+      g.gain.exponentialRampToValueAtTime(0.001, t + 1.15);
+
+      o.connect(formant).connect(g).connect(ac.destination);
+      o.start(t); o.stop(t + 1.2);
+    }
+
+    const src = ac.createBufferSource();
+    src.buffer = noiseBuffer(1.4);
+    const bp = ac.createBiquadFilter();
+    bp.type = 'bandpass'; bp.frequency.value = 1400; bp.Q.value = 0.7;
+    const g = ac.createGain();
+    g.gain.setValueAtTime(0, t);
+    g.gain.linearRampToValueAtTime(0.16, t + 0.35);
+    g.gain.exponentialRampToValueAtTime(0.001, t + 1.4);
+    src.connect(bp).connect(g).connect(ac.destination);
+    src.start(t);
+  }
+
+  /* Applåder – många korta bruspuffar, tätast i början. */
+  function playApplause(seconds = 1.5) {
+    const ac = getCtx();
+    const t = ac.currentTime;
+    const claps = Math.floor(seconds * 34);
+    for (let i = 0; i < claps; i++) {
+      const when = t + Math.pow(Math.random(), 0.7) * seconds;
+      const src = ac.createBufferSource();
+      src.buffer = noiseBuffer(0.025);
+      const bp = ac.createBiquadFilter();
+      bp.type = 'bandpass';
+      bp.frequency.value = 1500 + Math.random() * 1500;
+      bp.Q.value = 1.4;
+      const g = ac.createGain();
+      const fade = 1 - (when - t) / (seconds * 1.15);
+      g.gain.value = (0.05 + Math.random() * 0.09) * Math.max(0.2, fade);
+      src.connect(bp).connect(g).connect(ac.destination);
+      src.start(when);
+    }
+  }
+
+  /* Publikens besvikna "aaaw..." – fallande röster. */
+  function playAww() {
+    const ac = getCtx();
+    const t = ac.currentTime;
+    for (let v = 0; v < 4; v++) {
+      const base = 230 + v * 28 + Math.random() * 10;
+      const o = ac.createOscillator();
+      o.type = 'sawtooth';
+      o.frequency.setValueAtTime(base, t);
+      o.frequency.exponentialRampToValueAtTime(base * 0.55, t + 1.0);
+
+      const formant = ac.createBiquadFilter();
+      formant.type = 'bandpass';
+      formant.Q.value = 1.8;
+      formant.frequency.setValueAtTime(820, t);   // "aa–"
+      formant.frequency.exponentialRampToValueAtTime(420, t + 1.0); // "–ww"
+
+      const g = ac.createGain();
+      g.gain.setValueAtTime(0, t);
+      g.gain.linearRampToValueAtTime(0.07, t + 0.1);
+      g.gain.setValueAtTime(0.07, t + 0.5);
+      g.gain.exponentialRampToValueAtTime(0.001, t + 1.1);
+
+      o.connect(formant).connect(g).connect(ac.destination);
+      o.start(t); o.stop(t + 1.15);
+    }
+  }
+
   /**
    * Spelar upp en melodi med rytm. notes = [{ midi, beats }], beatMs = ms per
    * taktslag. onNote(i) anropas när not i börjar ljuda, onDone() när allt är
@@ -146,5 +246,8 @@ const AudioEngine = (() => {
     return () => timers.forEach(clearTimeout); // avbryt-funktion
   }
 
-  return { getCtx, midiToFreq, playNote, playMelody, playBlip, playSuccessJingle, playFailSound };
+  return {
+    getCtx, midiToFreq, playNote, playMelody, playBlip,
+    playSuccessJingle, playFailSound, playCheer, playApplause, playAww,
+  };
 })();
