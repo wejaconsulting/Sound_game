@@ -237,17 +237,48 @@ function midiToName(midi) {
   return NOTE_NAMES[((m % 12) + 12) % 12] + (Math.floor(m / 12) - 1);
 }
 
+/* ---------- Skärmlås (mobil) – håll skärmen vaken medan man spelar ---------- */
+let wakeLock = null;
+async function keepAwake() {
+  try { wakeLock = await navigator.wakeLock?.request('screen'); } catch { /* stöds inte – ofarligt */ }
+}
+function releaseWake() {
+  wakeLock?.release().catch(() => {});
+  wakeLock = null;
+}
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && ['listen', 'sing', 'between'].includes(game.phase)) {
+    keepAwake();
+    AudioEngine.getCtx(); // väck AudioContext igen om mobilen pausade den
+  }
+});
+
 /* ---------- Spelflöde ---------- */
+function micErrorText(err) {
+  if (err.name === 'InsecureContextError') {
+    return '🔒 Mikrofonen kan bara användas när appen körs via https eller localhost. Öppna appen från en säker adress och försök igen.';
+  }
+  if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+    return '😕 Mikrofonen blockerades. Tillåt mikrofon för den här sidan i webbläsarens inställningar och tryck på nivån igen.';
+  }
+  if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
+    return '🎙️ Ingen mikrofon hittades. Koppla in eller aktivera en mikrofon och försök igen.';
+  }
+  return '😕 Kunde inte starta mikrofonen. Testa att ladda om sidan och tillåta mikrofon när webbläsaren frågar.';
+}
+
 async function startGame(levelKey) {
-  AudioEngine.getCtx(); // skapa/väck AudioContext i klickgesten
+  AudioEngine.getCtx(); // skapa/väck AudioContext i klickgesten (krav på mobil)
   try {
     await PitchDetector.init();
   } catch (err) {
     const el = $('mic-error');
     el.hidden = false;
-    el.textContent = '😕 Kunde inte nå mikrofonen. Tillåt mikrofon i webbläsaren och testa igen. (Appen måste köras via https eller localhost.)';
+    el.textContent = micErrorText(err);
     return;
   }
+  $('mic-error').hidden = true;
+  keepAwake();
 
   game.levelKey = levelKey;
   game.level = LEVELS[levelKey];
@@ -477,6 +508,7 @@ function gameOver(reason) {
   game.phase = 'over';
   if (game.cancelPlayback) { game.cancelPlayback(); game.cancelPlayback = null; }
   cancelAnimationFrame(game.pitchLoop);
+  releaseWake();
   AudioEngine.playFailSound();
 
   const key = `singsong-best-${game.levelKey}`;

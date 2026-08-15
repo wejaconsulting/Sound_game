@@ -18,6 +18,14 @@ body {
   color: #fff;
   overflow-x: hidden;
   background: var(--ink);
+  touch-action: manipulation;          /* ingen dubbeltrycks-zoom på mobil */
+  -webkit-tap-highlight-color: transparent;
+}
+
+button {
+  touch-action: manipulation;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 /* Animerad discobakgrund */
@@ -58,11 +66,12 @@ body {
 .screen {
   display: none;
   min-height: 100vh;
+  min-height: 100dvh;                  /* stabil höjd på mobil (adressfältet räknas bort) */
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 1.1rem;
-  padding: 2rem 1.2rem 3rem;
+  padding: calc(1.4rem + env(safe-area-inset-top)) 1.2rem calc(2.2rem + env(safe-area-inset-bottom));
   text-align: center;
 }
 .screen.active { display: flex; }

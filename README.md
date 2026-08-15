@@ -43,6 +43,22 @@ ihåliga på notpapperet precis som i riktig notskrift.
 
 Rekord per nivå sparas lokalt i webbläsaren.
 
+## På mobilen 📱
+
+Sing Song är byggd som en PWA (progressiv webbapp):
+
+- Öppna appen via **https** i mobilens webbläsare och tryck på en nivå –
+  mikrofonen startas direkt i tryckgesten, precis som mobilwebbläsare kräver,
+  och webbläsaren frågar om lov första gången.
+- Välj **"Lägg till på hemskärmen"** så installeras appen med egen ikon och
+  körs i helskärm utan adressfält.
+- Skärmen hålls vaken medan du spelar (Wake Lock), och ljudmotorn väcks
+  automatiskt om mobilen pausat den när du växlat app.
+- Appen cachas av en service worker så att den laddar snabbt och fungerar
+  även med skakig uppkoppling.
+- Blockerade du mikrofonen av misstag får du en tydlig förklaring om hur du
+  slår på den igen.
+
 ## Kör appen
 
 Appen är ren HTML/CSS/JavaScript utan byggsteg, men mikrofonen kräver att sidan

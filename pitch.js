@@ -8,6 +8,11 @@ const PitchDetector = (() => {
 
   async function init() {
     if (analyser) return;
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      const e = new Error('Mikrofon-API saknas (kräver https eller localhost).');
+      e.name = 'InsecureContextError';
+      throw e;
+    }
     const ac = AudioEngine.getCtx();
     mediaStream = await navigator.mediaDevices.getUserMedia({
       audio: {
