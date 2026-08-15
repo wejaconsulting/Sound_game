@@ -1,32 +1,29 @@
 /* ===== Sing Song – spellogik ===== */
 
 /* ---------- Nivåer ---------- */
-/* scale = MIDI-toner melodin byggs av. maxStep = max hopp i skalsteg.
+/* Melodierna hämtas ur songboken (songs.js) per nivå.
+   startNotes = så många toner av låten runda 1 börjar med.
    toleranceCents = hur nära man måste sjunga (oktav-oberoende).
    misses = tillåtna missar per runda. replays = "hör igen" per runda. */
 const LEVELS = {
   latt: {
     label: 'Lätt',
-    scale: [60, 62, 64, 67, 69, 72],       // C-dur pentatonisk
-    startNotes: 3, maxStep: 1, noteMs: 700,
+    startNotes: 3, noteMs: 620,
     toleranceCents: 75, misses: 2, replays: 2, beat: false,
   },
   medium: {
     label: 'Medium',
-    scale: [60, 62, 64, 65, 67, 69, 71, 72], // C-durskalan
-    startNotes: 4, maxStep: 2, noteMs: 600,
+    startNotes: 4, noteMs: 540,
     toleranceCents: 60, misses: 1, replays: 1, beat: true,
   },
   svar: {
     label: 'Svår',
-    scale: [60, 62, 64, 65, 67, 69, 71, 72, 74, 76], // C-dur upp till E5
-    startNotes: 4, maxStep: 4, noteMs: 520,
+    startNotes: 5, noteMs: 480,
     toleranceCents: 45, misses: 1, replays: 1, beat: true,
   },
   hardcore: {
     label: 'Hardcore 🔥',
-    scale: Array.from({ length: 17 }, (_, i) => 60 + i), // kromatiskt C4–E5
-    startNotes: 5, maxStep: 7, noteMs: 460,
+    startNotes: 6, noteMs: 430,
     toleranceCents: 35, misses: 0, replays: 0, beat: true,
   },
 };
@@ -40,7 +37,10 @@ const game = {
   round: 1,
   score: 0,
   streak: 0,
-  melody: [],
+  melody: [],        // [{ midi, beats }]
+  songTitle: '',
+  lastSongId: null,
+  results: [],       // 'hit' | 'miss' per ton, för återritning efter replay
   noteIndex: 0,
   missesLeft: 0,
   replaysLeft: 0,
@@ -124,13 +124,14 @@ function renderStaff(melody, { hidden = false } = {}) {
 
   const n = melody.length;
   const span = STAFF.right - STAFF.left;
-  melody.forEach((midi, i) => {
+  melody.forEach((note, i) => {
+    const { midi, beats } = note;
     const { step, sharp } = midiToStaff(midi);
     const x = STAFF.left + span * ((i + 0.5) / n);
     const y = staffY(step);
 
     const g = document.createElementNS(NS, 'g');
-    g.setAttribute('class', 'note');
+    g.setAttribute('class', beats >= 2 ? 'note half' : 'note'); // halvnot ritas ihålig
     g.dataset.index = i;
 
     // Hjälplinjer under (C4) och över notsystemet
@@ -191,26 +192,17 @@ function setNoteState(i, state) {
   if (state) el.classList.add(state);
 }
 
-/* ---------- Melodigenerator ---------- */
-function generateMelody(level, round) {
-  const len = level.startNotes + (round - 1);
-  const scale = level.scale;
-  const melody = [];
-  let idx = Math.floor(scale.length / 2) + Math.floor(Math.random() * 3) - 1;
-  idx = Math.max(0, Math.min(scale.length - 1, idx));
+/* ---------- Melodival – hämta en bit av en riktig låt ---------- */
+function pickMelody(levelKey, level, round) {
+  const pool = songsForLevel(levelKey);
+  let candidates = pool.filter((s) => s.id !== game.lastSongId);
+  if (candidates.length === 0) candidates = pool;
+  const song = candidates[Math.floor(Math.random() * candidates.length)];
 
-  for (let i = 0; i < len; i++) {
-    melody.push(scale[idx]);
-    let next = idx;
-    let guard = 0;
-    do {
-      const step = Math.floor(Math.random() * (2 * level.maxStep + 1)) - level.maxStep;
-      next = Math.max(0, Math.min(scale.length - 1, idx + step));
-      guard++;
-    } while (guard < 12 && (next === idx && Math.random() < 0.7)); // undvik för mycket tonupprepning
-    idx = next;
-  }
-  return melody;
+  const len = Math.min(song.notes.length, level.startNotes + (round - 1) * 2);
+  game.lastSongId = song.id;
+  game.songTitle = song.title;
+  return song.notes.slice(0, len).map(([midi, beats]) => ({ midi, beats: beats || 1 }));
 }
 
 function roundTempo(level, round) {
@@ -270,7 +262,8 @@ async function startGame(levelKey) {
 function startRound() {
   if (game.phase === 'over') return;
   const lvl = game.level;
-  game.melody = generateMelody(lvl, game.round);
+  game.melody = pickMelody(game.levelKey, lvl, game.round);
+  game.results = [];
   game.noteIndex = 0;
   game.missesLeft = lvl.misses;
   game.replaysLeft = lvl.replays;
@@ -339,7 +332,7 @@ function armNote() {
 
 function runPitchLoop() {
   cancelAnimationFrame(game.pitchLoop);
-  const target = game.melody[game.noteIndex];
+  const target = game.melody[game.noteIndex].midi;
 
   const tick = () => {
     if (game.phase !== 'sing') return;
@@ -424,12 +417,14 @@ function evaluateNote(sungMidi, targetMidi) {
     const points = Math.round(60 + 60 * accuracy) + game.streak * 5;
     game.score += points;
     setNoteState(game.noteIndex, 'hit');
+    game.results[game.noteIndex] = 'hit';
     setStatus(`✨ ${targetName}! +${points} poäng`);
     AudioEngine.playBlip(1320, 0.12, 0.2);
   } else {
     game.streak = 0;
     game.missesLeft--;
     setNoteState(game.noteIndex, 'miss');
+    game.results[game.noteIndex] = 'miss';
     const why = sungMidi === null
       ? 'Ingen ton hördes 😶'
       : (cents > 0 ? `För högt! Det skulle vara ${targetName}` : `För lågt! Det skulle vara ${targetName}`);
@@ -439,7 +434,7 @@ function evaluateNote(sungMidi, targetMidi) {
   updateHud();
 
   if (!hit && game.missesLeft < 0) {
-    setTimeout(() => gameOver('Tonerna satt inte den här gången.'), 900);
+    setTimeout(() => gameOver(`Tonerna satt inte – det var "${game.songTitle}".`), 900);
     return;
   }
 
@@ -459,7 +454,7 @@ function roundClear() {
   const bonus = 100 * game.round;
   game.score += bonus;
   updateHud();
-  setStatus(`🎉 Runda ${game.round} klarad! +${bonus} bonus – hör melodin igen, helt ren:`);
+  setStatus(`🎉 Det var "${game.songTitle}"! +${bonus} bonus – hör den igen, helt ren:`);
   AudioEngine.playSuccessJingle();
   spawnConfetti();
 
@@ -541,7 +536,8 @@ $('btn-replay').addEventListener('click', () => {
       game.phase = 'sing';
       game.noteIndex = resumeIndex;
       updateHud();
-      // Återställ markeringen på noten man står på
+      // Rita tillbaka hur det gått hittills och markera noten man står på
+      game.results.forEach((r, i) => setNoteState(i, r));
       armNote();
     },
   });

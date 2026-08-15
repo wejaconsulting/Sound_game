@@ -283,6 +283,13 @@ body {
 .note { transition: transform .15s; }
 .note.playing { transform: translateY(-3px); }
 
+/* Halvnoter och längre ritas ihåliga */
+.note.half .note-head { fill-opacity: .22; stroke-width: 3; stroke: var(--pink); }
+.note.half.playing .note-head { stroke: var(--cyan); }
+.note.half.current .note-head { stroke: var(--gold); }
+.note.half.hit .note-head { stroke: var(--green); }
+.note.half.miss .note-head { stroke: var(--red); }
+
 @media (max-width: 560px) {
   .hud-item { min-width: 42%; }
   .disco-ball { width: 84px; height: 100px; }

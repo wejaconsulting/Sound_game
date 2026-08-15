@@ -108,34 +108,39 @@ const AudioEngine = (() => {
   }
 
   /**
-   * Spelar upp en melodi. onNote(i) anropas när not i börjar ljuda,
-   * onDone() när allt är klart. withBeat lägger en discotakt under.
+   * Spelar upp en melodi med rytm. notes = [{ midi, beats }], beatMs = ms per
+   * taktslag. onNote(i) anropas när not i börjar ljuda, onDone() när allt är
+   * klart. withBeat lägger en discotakt under.
    */
-  function playMelody(midis, noteMs, { withBeat = false, onNote = null, onDone = null } = {}) {
+  function playMelody(notes, beatMs, { withBeat = false, onNote = null, onDone = null } = {}) {
     const ac = getCtx();
     const start = ac.currentTime + 0.15;
-    const noteSec = noteMs / 1000;
+    const beatSec = beatMs / 1000;
 
-    midis.forEach((m, i) => {
-      playNote(m, start + i * noteSec, noteSec * 0.9);
+    const starts = [];
+    let t = 0;
+    notes.forEach((n) => {
+      starts.push(t);
+      playNote(n.midi, start + t, Math.max(0.18, n.beats * beatSec * 0.92));
+      t += n.beats * beatSec;
     });
+    const total = t;
 
     if (withBeat) {
-      const total = midis.length * noteSec;
-      const beatSec = Math.max(noteSec, 0.3);
-      for (let t = 0; t < total + 0.01; t += beatSec) {
-        playKick(start + t);
-        playHat(start + t + beatSec / 2);
+      const step = Math.max(beatSec, 0.3);
+      for (let b = 0; b < total + 0.01; b += step) {
+        playKick(start + b);
+        playHat(start + b + step / 2);
       }
     }
 
     /* UI-synk via timeouts relativt AudioContext-klockan. */
     const timers = [];
-    midis.forEach((m, i) => {
-      const delay = (start + i * noteSec - ac.currentTime) * 1000;
+    starts.forEach((s, i) => {
+      const delay = (start + s - ac.currentTime) * 1000;
       if (onNote) timers.push(setTimeout(() => onNote(i), Math.max(0, delay)));
     });
-    const endDelay = (start + midis.length * noteSec - ac.currentTime) * 1000 + 150;
+    const endDelay = (start + total - ac.currentTime) * 1000 + 150;
     timers.push(setTimeout(() => { if (onDone) onDone(); }, endDelay));
 
     return () => timers.forEach(clearTimeout); // avbryt-funktion

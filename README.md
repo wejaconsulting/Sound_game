@@ -17,14 +17,29 @@ och snabbare – missar du för många toner åker du ut!
 Appen jämför tonhöjd oktav-oberoende, så det går lika bra att sjunga i sitt eget
 röstläge (mörk eller ljus röst) – det är tonen som räknas, inte oktaven.
 
+## Riktiga melodier
+
+Melodierna är riktiga, kända låtar ur en inbyggd songbok (`songs.js`) – alla
+upphovsrättsfria (traditionella eller klassiska) så att spelet kan spridas fritt:
+
+- **Lätt:** Blinka lilla stjärna, Broder Jakob, Gubben Noak, Per Olsson, Imse vimse spindel
+- **Medium:** ovanstående plus Happy Birthday, An die Freude (Beethoven), Bjällerklang
+- **Svår:** Happy Birthday, An die Freude, Bjällerklang, Für Elise, Greensleeves
+- **Hardcore:** Für Elise, Greensleeves, The Entertainer (Joplin)
+
+Varje runda spelas en bit av låten – bitarna blir längre (och tempot högre) för
+varje runda tills hela melodin är med. Vilken låt det var avslöjas först när du
+klarat rundan. Melodierna spelas med sin riktiga rytm, och halvnoter ritas
+ihåliga på notpapperet precis som i riktig notskrift.
+
 ## Nivåer
 
-| Nivå | Toner från start | Tonmaterial | Tolerans | Tillåtna missar |
-|------|-----------------|-------------|----------|-----------------|
-| 🟢 Lätt | 3 | C-dur pentatonisk, små steg | ±75 cent | 2 |
-| 🟡 Medium | 4 | Hela C-durskalan | ±60 cent | 1 |
-| 🟠 Svår | 4 | C-dur med stora hopp | ±45 cent | 1 |
-| 🔥 Hardcore | 5 | Kromatiskt, stora hopp | ±35 cent | 0 |
+| Nivå | Toner från start | Melodier | Tolerans | Tillåtna missar |
+|------|-----------------|----------|----------|-----------------|
+| 🟢 Lätt | 3 | Barnvisor | ±75 cent | 2 |
+| 🟡 Medium | 4 | Kända melodier | ±60 cent | 1 |
+| 🟠 Svår | 5 | Klassiker med hopp | ±45 cent | 1 |
+| 🔥 Hardcore | 6 | Kromatiska klassiker | ±35 cent | 0 |
 
 Rekord per nivå sparas lokalt i webbläsaren.
 
