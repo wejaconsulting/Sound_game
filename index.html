@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TonJakten 🎤✨</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bungee&family=Righteous&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="bg-anim"></div>
+  <div class="floaters" aria-hidden="true"></div>
+
+  <!-- ===== STARTSKÄRM ===== -->
+  <section id="screen-start" class="screen active">
+    <div class="disco-ball" aria-hidden="true">
+      <div class="ball"></div>
+      <div class="string"></div>
+    </div>
+
+    <h1 class="logo">Ton<span>Jakten</span></h1>
+    <p class="tagline">Lyssna på melodin. Sjung tonerna. Överlev rundan. 🎤</p>
+
+    <div class="level-grid">
+      <button class="level-card" data-level="latt">
+        <span class="lvl-emoji">🟢</span>
+        <span class="lvl-name">Lätt</span>
+        <span class="lvl-desc">3 toner, snälla steg, 2 missar tillåtna</span>
+      </button>
+      <button class="level-card" data-level="medium">
+        <span class="lvl-emoji">🟡</span>
+        <span class="lvl-name">Medium</span>
+        <span class="lvl-desc">4 toner, hela skalan, 1 miss tillåten</span>
+      </button>
+      <button class="level-card" data-level="svar">
+        <span class="lvl-emoji">🟠</span>
+        <span class="lvl-name">Svår</span>
+        <span class="lvl-desc">4 toner, stora hopp, 1 miss tillåten</span>
+      </button>
+      <button class="level-card" data-level="hardcore">
+        <span class="lvl-emoji">🔥</span>
+        <span class="lvl-name">Hardcore</span>
+        <span class="lvl-desc">5 toner, kromatik, noll missar!</span>
+      </button>
+    </div>
+
+    <p class="highscore" id="highscore-text"></p>
+    <p class="mic-note">🎙️ Appen behöver din mikrofon för att höra hur du sjunger.</p>
+    <p class="mic-error" id="mic-error" hidden></p>
+  </section>
+
+  <!-- ===== SPELSKÄRM ===== -->
+  <section id="screen-game" class="screen">
+    <header class="hud">
+      <div class="hud-item"><span class="hud-label">Nivå</span><span id="hud-level">–</span></div>
+      <div class="hud-item"><span class="hud-label">Runda</span><span id="hud-round">1</span></div>
+      <div class="hud-item"><span class="hud-label">Poäng</span><span id="hud-score">0</span></div>
+      <div class="hud-item"><span class="hud-label">Missar kvar</span><span id="hud-lives">❤️❤️</span></div>
+    </header>
+
+    <div class="sheet-card">
+      <div class="sheet-glow"></div>
+      <svg id="staff" viewBox="0 0 800 240" preserveAspectRatio="xMidYMid meet"></svg>
+    </div>
+
+    <div class="status-row">
+      <div id="status-text" class="status-text">Gör dig redo…</div>
+    </div>
+
+    <div class="meter-wrap" id="meter-wrap">
+      <div class="meter-labels"><span>♭ för lågt</span><span id="meter-note">–</span><span>för högt ♯</span></div>
+      <div class="meter-track">
+        <div class="meter-zone" id="meter-zone"></div>
+        <div class="meter-needle" id="meter-needle"></div>
+      </div>
+    </div>
+
+    <div class="game-buttons">
+      <button id="btn-replay" class="btn small">🔁 Hör igen (<span id="replay-count">0</span>)</button>
+      <button id="btn-quit" class="btn small ghost">Avsluta</button>
+    </div>
+  </section>
+
+  <!-- ===== GAME OVER ===== -->
+  <section id="screen-gameover" class="screen">
+    <div class="disco-ball sad" aria-hidden="true">
+      <div class="ball"></div>
+      <div class="string"></div>
+    </div>
+    <h1 class="gameover-title">DU ÅKTE UT!</h1>
+    <p class="gameover-sub" id="gameover-reason"></p>
+    <div class="result-card">
+      <div class="result-row"><span>Nivå</span><strong id="res-level">–</strong></div>
+      <div class="result-row"><span>Rundor klarade</span><strong id="res-rounds">0</strong></div>
+      <div class="result-row"><span>Poäng</span><strong id="res-score">0</strong></div>
+      <div class="result-row"><span>Rekord</span><strong id="res-best">0</strong></div>
+    </div>
+    <div class="game-buttons">
+      <button id="btn-retry" class="btn">🎤 Sjung igen</button>
+      <button id="btn-menu" class="btn ghost">Byt nivå</button>
+    </div>
+  </section>
+
+  <script src="audio.js"></script>
+  <script src="pitch.js"></script>
+  <script src="game.js"></script>
+</body>
+</html>

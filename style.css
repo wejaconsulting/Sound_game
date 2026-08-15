@@ -1,0 +1,290 @@
+/* ===== TonJakten – disco vibe ===== */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --pink: #ff3ec9;
+  --cyan: #2ff3ff;
+  --purple: #7b2ff7;
+  --gold: #ffd166;
+  --green: #3ddc84;
+  --red: #ff4d6d;
+  --ink: #12002b;
+}
+
+html, body { height: 100%; }
+
+body {
+  font-family: 'Righteous', 'Trebuchet MS', sans-serif;
+  color: #fff;
+  overflow-x: hidden;
+  background: var(--ink);
+}
+
+/* Animerad discobakgrund */
+.bg-anim {
+  position: fixed; inset: 0; z-index: -2;
+  background: linear-gradient(130deg, #2b0a4e, #12002b 35%, #3d0a5e 60%, #0b1e4e);
+  background-size: 300% 300%;
+  animation: bgshift 16s ease-in-out infinite;
+}
+.bg-anim::after {
+  content: ""; position: absolute; inset: 0;
+  background:
+    radial-gradient(ellipse 60% 40% at 20% 10%, rgba(255, 62, 201, .22), transparent 60%),
+    radial-gradient(ellipse 50% 40% at 85% 20%, rgba(47, 243, 255, .16), transparent 60%),
+    radial-gradient(ellipse 70% 50% at 50% 100%, rgba(123, 47, 247, .28), transparent 65%);
+}
+@keyframes bgshift {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+/* Flytande noter */
+.floaters { position: fixed; inset: 0; z-index: -1; pointer-events: none; overflow: hidden; }
+.floaters span {
+  position: absolute; bottom: -8vh;
+  font-size: 2rem; opacity: 0;
+  animation: floatup linear infinite;
+  text-shadow: 0 0 18px currentColor;
+}
+@keyframes floatup {
+  0% { transform: translateY(0) rotate(-12deg); opacity: 0; }
+  12% { opacity: .6; }
+  85% { opacity: .45; }
+  100% { transform: translateY(-115vh) rotate(14deg); opacity: 0; }
+}
+
+/* ===== Skärmar ===== */
+.screen {
+  display: none;
+  min-height: 100vh;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1.1rem;
+  padding: 2rem 1.2rem 3rem;
+  text-align: center;
+}
+.screen.active { display: flex; }
+
+/* ===== Discokula ===== */
+.disco-ball { position: relative; width: 110px; height: 130px; margin-bottom: -.4rem; }
+.disco-ball .string {
+  position: absolute; top: 0; left: 50%; width: 2px; height: 26px;
+  background: linear-gradient(#fff8, #fff2); transform: translateX(-50%);
+}
+.disco-ball .ball {
+  position: absolute; top: 24px; left: 50%; transform: translateX(-50%);
+  width: 104px; height: 104px; border-radius: 50%;
+  background:
+    radial-gradient(circle at 32% 28%, rgba(255,255,255,.95), transparent 28%),
+    repeating-linear-gradient(0deg, #9fb6ff 0 9px, #6f86e8 9px 10px),
+    repeating-linear-gradient(90deg, #cdd9ff88 0 9px, #5b6fd688 9px 10px);
+  background-blend-mode: overlay;
+  box-shadow:
+    0 0 34px rgba(160, 190, 255, .8),
+    0 0 90px rgba(255, 62, 201, .45),
+    inset -14px -14px 30px rgba(0,0,30,.55);
+  animation: ballspin 5s linear infinite;
+}
+@keyframes ballspin {
+  0%, 100% { filter: hue-rotate(0deg) brightness(1); }
+  50% { filter: hue-rotate(50deg) brightness(1.2); }
+}
+.disco-ball.sad .ball { animation-duration: 12s; filter: saturate(.4); }
+
+/* ===== Logotyp ===== */
+.logo {
+  font-family: 'Bungee', 'Righteous', sans-serif;
+  font-size: clamp(2.6rem, 9vw, 5rem);
+  letter-spacing: .02em;
+  color: #fff;
+  text-shadow: 0 0 14px var(--cyan), 0 0 42px var(--purple), 4px 4px 0 #0007;
+}
+.logo span {
+  color: var(--pink);
+  text-shadow: 0 0 14px var(--pink), 0 0 50px var(--pink), 4px 4px 0 #0007;
+}
+.tagline { font-size: 1.05rem; opacity: .85; max-width: 34rem; }
+
+/* ===== Nivåval ===== */
+.level-grid {
+  display: grid; gap: .9rem;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  width: min(760px, 94vw);
+  margin-top: .6rem;
+}
+.level-card {
+  font-family: inherit; color: #fff; cursor: pointer;
+  display: flex; flex-direction: column; gap: .35rem; align-items: center;
+  padding: 1.1rem .9rem 1rem;
+  border-radius: 18px;
+  border: 2px solid rgba(255,255,255,.18);
+  background: linear-gradient(160deg, rgba(255,255,255,.10), rgba(255,255,255,.03));
+  backdrop-filter: blur(6px);
+  transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease;
+}
+.level-card:hover, .level-card:focus-visible {
+  transform: translateY(-4px) scale(1.02);
+  border-color: var(--pink);
+  box-shadow: 0 0 24px rgba(255, 62, 201, .5);
+  outline: none;
+}
+.lvl-emoji { font-size: 1.7rem; }
+.lvl-name { font-size: 1.35rem; letter-spacing: .04em; }
+.lvl-desc { font-size: .8rem; opacity: .75; line-height: 1.35; }
+
+.highscore { color: var(--gold); text-shadow: 0 0 12px rgba(255, 209, 102, .6); min-height: 1.2em; }
+.mic-note { font-size: .85rem; opacity: .6; }
+.mic-error { color: var(--red); font-size: .95rem; max-width: 32rem; }
+
+/* ===== HUD ===== */
+.hud {
+  display: flex; gap: .7rem; flex-wrap: wrap; justify-content: center;
+  width: min(820px, 96vw);
+}
+.hud-item {
+  flex: 1; min-width: 110px;
+  display: flex; flex-direction: column; gap: .15rem;
+  padding: .55rem .9rem;
+  border-radius: 14px;
+  background: rgba(255,255,255,.07);
+  border: 1px solid rgba(255,255,255,.14);
+}
+.hud-label { font-size: .68rem; text-transform: uppercase; letter-spacing: .14em; opacity: .6; }
+.hud-item span:last-child { font-size: 1.25rem; color: var(--cyan); text-shadow: 0 0 10px rgba(47,243,255,.6); }
+#hud-lives { color: #fff !important; text-shadow: none !important; }
+
+/* ===== Notpapper ===== */
+.sheet-card {
+  position: relative;
+  width: min(820px, 96vw);
+  border-radius: 22px;
+  padding: .6rem;
+  background: linear-gradient(150deg, rgba(255,255,255,.12), rgba(255,255,255,.04));
+  border: 2px solid rgba(255,255,255,.2);
+  transform: rotate(-1.2deg);
+  box-shadow: 0 18px 50px rgba(0,0,0,.45);
+}
+.sheet-glow {
+  position: absolute; inset: -3px; border-radius: 24px; z-index: -1;
+  background: conic-gradient(from 0deg, var(--pink), var(--purple), var(--cyan), var(--gold), var(--pink));
+  filter: blur(22px); opacity: .5;
+  animation: glowspin 8s linear infinite;
+}
+@keyframes glowspin { to { filter: blur(22px) hue-rotate(360deg); } }
+#staff { width: 100%; height: auto; display: block; }
+
+/* ===== Status & mätare ===== */
+.status-text {
+  font-size: clamp(1.1rem, 4vw, 1.6rem);
+  min-height: 2.2rem;
+  text-shadow: 0 0 16px rgba(47,243,255,.5);
+}
+.status-text.pulse { animation: pulse .9s ease-in-out infinite; }
+@keyframes pulse { 50% { transform: scale(1.06); opacity: .85; } }
+
+.meter-wrap { width: min(560px, 92vw); opacity: .35; transition: opacity .25s; }
+.meter-wrap.live { opacity: 1; }
+.meter-labels {
+  display: flex; justify-content: space-between; font-size: .78rem; opacity: .8;
+  margin-bottom: .3rem;
+}
+#meter-note { font-size: 1.05rem; color: var(--gold); text-shadow: 0 0 10px rgba(255,209,102,.7); }
+.meter-track {
+  position: relative; height: 26px; border-radius: 13px;
+  background: rgba(255,255,255,.08);
+  border: 1px solid rgba(255,255,255,.18);
+  overflow: hidden;
+}
+.meter-zone {
+  position: absolute; top: 0; bottom: 0; left: 50%;
+  width: 30%; transform: translateX(-50%);
+  background: linear-gradient(90deg, transparent, rgba(61,220,132,.4), transparent);
+}
+.meter-needle {
+  position: absolute; top: 2px; bottom: 2px; left: 50%;
+  width: 6px; border-radius: 3px;
+  background: var(--cyan);
+  box-shadow: 0 0 12px var(--cyan);
+  transform: translateX(-50%);
+  transition: left .08s linear, background .15s;
+}
+
+/* ===== Knappar ===== */
+.game-buttons { display: flex; gap: .8rem; flex-wrap: wrap; justify-content: center; }
+.btn {
+  font-family: inherit; font-size: 1.05rem; color: #fff; cursor: pointer;
+  padding: .75rem 1.6rem; border-radius: 999px;
+  border: 2px solid transparent;
+  background: linear-gradient(90deg, var(--pink), var(--purple));
+  box-shadow: 0 6px 22px rgba(255, 62, 201, .4);
+  transition: transform .12s ease, box-shadow .12s ease;
+}
+.btn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(255,62,201,.55); }
+.btn:disabled { opacity: .4; cursor: not-allowed; }
+.btn.small { font-size: .9rem; padding: .55rem 1.2rem; }
+.btn.ghost { background: transparent; border-color: rgba(255,255,255,.35); box-shadow: none; }
+
+/* ===== Game over ===== */
+.gameover-title {
+  font-family: 'Bungee', sans-serif;
+  font-size: clamp(2.2rem, 8vw, 4.2rem);
+  color: var(--red);
+  text-shadow: 0 0 18px rgba(255,77,109,.8), 4px 4px 0 #0008;
+  animation: shake .6s ease;
+}
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-10px) rotate(-2deg); }
+  40% { transform: translateX(9px) rotate(2deg); }
+  60% { transform: translateX(-6px); }
+  80% { transform: translateX(5px); }
+}
+.gameover-sub { opacity: .85; font-size: 1.05rem; }
+.result-card {
+  width: min(380px, 92vw);
+  border-radius: 18px;
+  background: rgba(255,255,255,.08);
+  border: 1px solid rgba(255,255,255,.16);
+  padding: 1rem 1.3rem;
+  display: flex; flex-direction: column; gap: .55rem;
+}
+.result-row { display: flex; justify-content: space-between; font-size: 1rem; }
+.result-row span { opacity: .7; }
+.result-row strong { color: var(--gold); text-shadow: 0 0 10px rgba(255,209,102,.5); }
+
+/* ===== Konfetti ===== */
+.confetti {
+  position: fixed; top: -20px; z-index: 50;
+  width: 10px; height: 16px; border-radius: 3px;
+  pointer-events: none;
+  animation: confall linear forwards;
+}
+@keyframes confall {
+  to { transform: translateY(110vh) rotate(720deg); opacity: .7; }
+}
+
+/* ===== Noter i SVG ===== */
+.staff-line { stroke: rgba(255,255,255,.5); stroke-width: 2; }
+.ledger-line { stroke: rgba(255,255,255,.45); stroke-width: 2; }
+.clef { fill: var(--cyan); filter: drop-shadow(0 0 8px rgba(47,243,255,.8)); }
+.note-head { fill: var(--pink); filter: drop-shadow(0 0 7px rgba(255,62,201,.9)); }
+.note-stem { stroke: var(--pink); stroke-width: 3; stroke-linecap: round; filter: drop-shadow(0 0 5px rgba(255,62,201,.7)); }
+.note-acc { fill: var(--gold); font-size: 26px; filter: drop-shadow(0 0 6px rgba(255,209,102,.8)); }
+.note.playing .note-head { fill: var(--cyan); filter: drop-shadow(0 0 12px var(--cyan)); }
+.note.playing .note-stem { stroke: var(--cyan); }
+.note.current .note-head { fill: var(--gold); filter: drop-shadow(0 0 12px var(--gold)); }
+.note.current .note-stem { stroke: var(--gold); }
+.note.hit .note-head { fill: var(--green); filter: drop-shadow(0 0 10px var(--green)); }
+.note.hit .note-stem { stroke: var(--green); }
+.note.miss .note-head { fill: var(--red); filter: drop-shadow(0 0 10px var(--red)); }
+.note.miss .note-stem { stroke: var(--red); }
+.note { transition: transform .15s; }
+.note.playing { transform: translateY(-3px); }
+
+@media (max-width: 560px) {
+  .hud-item { min-width: 42%; }
+  .disco-ball { width: 84px; height: 100px; }
+  .disco-ball .ball { width: 78px; height: 78px; }
+}
