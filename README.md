@@ -1,4 +1,4 @@
-# TonJakten 🎤✨
+# Sing Song 🎤✨
 
 Ett sång- och lekspel med disco-vibe: du får en melodi uppspelad på keyboard och ska
 sedan sjunga tillbaka exakt samma toner. Klarar du rundan blir nästa melodi längre

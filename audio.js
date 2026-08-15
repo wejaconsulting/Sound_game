@@ -1,4 +1,4 @@
-/* ===== TonJakten – ljudmotor (Web Audio) ===== */
+/* ===== Sing Song – ljudmotor (Web Audio) ===== */
 /* Spelar upp melodier med ett keyboard-liknande syntljud och en valfri discotakt. */
 
 const AudioEngine = (() => {

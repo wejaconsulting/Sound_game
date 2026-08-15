@@ -1,4 +1,4 @@
-/* ===== TonJakten – tonhöjdsdetektering via mikrofon ===== */
+/* ===== Sing Song – tonhöjdsdetektering via mikrofon ===== */
 /* Autokorrelation (ACF2+) på tidsdomänsbufferten från en AnalyserNode. */
 
 const PitchDetector = (() => {

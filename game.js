@@ -1,4 +1,4 @@
-/* ===== TonJakten – spellogik ===== */
+/* ===== Sing Song – spellogik ===== */
 
 /* ---------- Nivåer ---------- */
 /* scale = MIDI-toner melodin byggs av. maxStep = max hopp i skalsteg.
@@ -484,7 +484,7 @@ function gameOver(reason) {
   cancelAnimationFrame(game.pitchLoop);
   AudioEngine.playFailSound();
 
-  const key = `tonjakten-best-${game.levelKey}`;
+  const key = `singsong-best-${game.levelKey}`;
   const best = Math.max(game.score, Number(localStorage.getItem(key) || 0));
   localStorage.setItem(key, String(best));
 
@@ -516,7 +516,7 @@ function spawnConfetti() {
 function showHighscores() {
   const parts = Object.entries(LEVELS)
     .map(([k, l]) => {
-      const b = Number(localStorage.getItem(`tonjakten-best-${k}`) || 0);
+      const b = Number(localStorage.getItem(`singsong-best-${k}`) || 0);
       return b > 0 ? `${l.label}: ${b}` : null;
     })
     .filter(Boolean);
